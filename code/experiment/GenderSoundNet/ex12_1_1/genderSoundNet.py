@@ -60,7 +60,7 @@ trainFeature, trainLabel, testFeature, testLabel = expUtil.loadData( testFolder 
 #initList = [ 'RandomUniform', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform' ]
 batch_sizeList = [ 32 ]
 learningRateList = [ 1e-4 ]
-initList = [ 'he_normal' ]
+initList = [ 'he_uniform' ]
 for batch_size in batch_sizeList:
     resultList = [  ]
     for learningRate in learningRateList:    
@@ -73,7 +73,6 @@ for batch_size in batch_sizeList:
                                                         modelT = model, newFolderName = tempFolderName, init = init, saveSign = False  )
             resultList.append( resultOnTest[ -1 ] )
             np.savetxt( newFolderName + '\_' + str( batch_size ) +'_gridSearch.csv', resultList, delimiter = ',' )
-    resultList = np.array( resultList )
     resultList.resize( [ len( learningRateList ), len( initList ) ] )
     np.savetxt( newFolderName + '\_' + str( batch_size ) +'_gridSearch.csv', resultList, delimiter = ',' )
 

@@ -13,7 +13,7 @@ import keras
 from keras.models import Model
 from keras import regularizers
 
-def soundNet( input, numClass = 2, activationUnit = 'relu', l2_reg = 0.01, init = 'lecun_uniform', biasInit = 'Zeros', denseUnitNum = 64, denseUnit = 'relu' ):
+def soundNet( input, numClass = 2, activationUnit = 'relu', l2_reg = 0.01, init = 'lecun_uniform', biasInit = 'Zeros', denseUnitNum = 64 ):
     
     # conv1 pool1
     input = tf.convert_to_tensor( input )
@@ -100,7 +100,7 @@ def soundNet( input, numClass = 2, activationUnit = 'relu', l2_reg = 0.01, init 
         input = tf.reshape( input, [ example_num, newSubSequence_length ] )
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
     with tf.name_scope( 'dense1' ):
-        input = keras.layers.core.Dense( denseUnitNum, activation = denseUnit, kernel_initializer = init, bias_initializer = biasInit )( input )
+        input = keras.layers.core.Dense( denseFilterNum, activation = denseUnitNum, kernel_initializer = init, bias_initializer = biasInit   )( input )
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
         dense1Out = tf.identity( input, name = 'dense1Out' ) 
     with tf.name_scope( 'dense2' ):

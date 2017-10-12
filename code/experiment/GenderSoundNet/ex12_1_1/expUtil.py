@@ -123,7 +123,7 @@ def processData( dataSet, task = 'nonEmotion', balance = 'imbalance' ):
 #%% 
 def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iteration_num = 100, \
            lr_decay = 0.1, batch_size = 32, learningRate = 0.0001, iterationNum = 100, \
-           modelT = soundNet.soundNet, init = 'lecun_uniform', saveSign = False, denseUnitNum = 64 ):
+           modelT = soundNet.soundNet, init = 'lecun_uniform', denseUnitNum = 64 ):
     
     os.mkdir( newFolderName + '/weight' )
     os.mkdir( newFolderName + '/models' )
@@ -211,7 +211,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             #np.savetxt( newFolderName + '/weightConv1' + str( iteration + 1 ) + '.csv', lastState, delimiter = ',' )
             
             # save model every 10 epoches
-            if ( iteration + 1 )%20 == 0 and saveSign == True:            
+            if ( iteration + 1 )%1 == 0:            
                 save_path = saver.save( sess, newFolderName + '/models/' + str( iteration + 1 ) + '_.ckpt' )
                 print("Model saved in file: %s" % save_path)
             

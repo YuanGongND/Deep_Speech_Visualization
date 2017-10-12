@@ -211,7 +211,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             #np.savetxt( newFolderName + '/weightConv1' + str( iteration + 1 ) + '.csv', lastState, delimiter = ',' )
             
             # save model every 10 epoches
-            if ( iteration + 1 )%20 == 0 and saveSign == True:            
+            if ( iteration + 1 ) %20 == 0:            
                 save_path = saver.save( sess, newFolderName + '/models/' + str( iteration + 1 ) + '_.ckpt' )
                 print("Model saved in file: %s" % save_path)
             

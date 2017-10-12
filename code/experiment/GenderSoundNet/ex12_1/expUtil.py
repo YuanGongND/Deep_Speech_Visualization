@@ -123,7 +123,7 @@ def processData( dataSet, task = 'nonEmotion', balance = 'imbalance' ):
 #%% 
 def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iteration_num = 100, \
            lr_decay = 0.1, batch_size = 32, learningRate = 0.0001, iterationNum = 100, \
-           modelT = soundNet.soundNet, init = 'lecun_uniform', saveSign = False, denseUnitNum = 64 ):
+           modelT = soundNet.soundNet, init = 'lecun_uniform', saveSign = False, denseFilterNum = 64 ):
     
     os.mkdir( newFolderName + '/weight' )
     os.mkdir( newFolderName + '/models' )
@@ -143,18 +143,17 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
         input_x = tf.placeholder( tf.float32, shape = ( batch_size, 96000 ), name = 'inputx' )
         input_y = tf.placeholder( tf.float32, shape = ( batch_size, class_num ), name = 'inputy' )
         
-        prediction = modelT( input_x, numClass = class_num, l2_reg = 0.5, init = init, denseUnitNum  = denseUnitNum )
+        prediction = modelT( input_x, numClass = class_num, l2_reg = 0.5 )
         loss = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits( logits = prediction, labels= input_y ) )
         train_step = tf.train.AdamOptimizer( learning_rate ).minimize( loss, global_step = global_step )
-        #train_step = tf.train.GradientDescentOptimizer( learning_rate ).minimize( loss, global_step = global_step )
         correct_prediction = tf.equal( tf.argmax( prediction, 1 ), tf.argmax( input_y, 1 )  )
         accuracy = tf.reduce_mean( tf.cast( correct_prediction, tf.float32 ), name="acc_restore" )
+        
+        saver = tf.train.Saver( max_to_keep= 100 )
         
         # initialize the data 
         init_op = tf.global_variables_initializer(  )
         sess.run( init_op )
-        saver = tf.train.Saver( max_to_keep= 100 )
-        print( tf.trainable_variables() )
         
         # number of iterations
         for iteration in range( 0, iteration_num ):
@@ -198,17 +197,10 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             np.savetxt( newFolderName + '/testTrainLabel.csv', inputTestTrainLabel, delimiter = ',' )
             result[ 1, iteration ] = accuracyTrain
             print( '-----------------------------' )
-            #print( sess.run(global_step) ) 
-            #print( sess.run(learning_rate) )
+            print( sess.run(global_step) ) 
+            print( sess.run(learning_rate) )
             # record the accuracy of both test/ training error approximation on the small subset
             np.savetxt( newFolderName + '/accuracy.csv', result, delimiter = ',' )
-            
-            # print variable
-            if iteration == 0:
-                lastState = printVariable( sess, newFolderName = newFolderName )
-            else:
-                lastState = printVariable( sess, lastState, iteration + 1, newFolderName = newFolderName )
-            #np.savetxt( newFolderName + '/weightConv1' + str( iteration + 1 ) + '.csv', lastState, delimiter = ',' )
             
             # save model every 10 epoches
             if ( iteration + 1 )%20 == 0 and saveSign == True:            
@@ -222,35 +214,6 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             plt.savefig( newFolderName + '/accuracy.png' )
             
     return resultOnTrain, resultOnTest
-
-#%%
-def printVariable( sess, lastState = -1, iteration = 1, newFolderName = -1 ):     
-      layerList = [ 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8', 'dense1', 'dense2' ]
-      currentState = [ 0 ] *len( layerList )
-      for layerIndex in range( len( layerList ) ):
-          allFilter =  tf.get_collection( tf.GraphKeys.GLOBAL_VARIABLES, scope= layerList[ layerIndex ] )
-          kernal = allFilter[ 0 ].eval( )
-          if layerIndex <= 7:
-              filterNum = kernal.shape[ 3 ]
-              filterSize = kernal.shape[ 1 ]
-          else:
-              filterNum = kernal.shape[ 1 ]
-              filterSize = kernal.shape[ 0 ]
-          currentState[ layerIndex ] = np.zeros( [ filterNum, filterSize ] )
-          for filterIndex in range( 0, filterNum ):
-              if layerIndex <= 7:
-                  tempFilter = kernal[ 0, :, 0, filterIndex ]
-              else:
-                  tempFilter = kernal[ :, filterIndex ]
-              #tempFilter = kernal[ : , filterIndex ]
-              #filterFFT = np.fft.fft( tempFilter )
-              currentState[ layerIndex ][ filterIndex, : ] = tempFilter
-          np.savetxt( newFolderName + '/weight/' +  str( iteration ) + '_' + layerList[ layerIndex ] + '.csv', currentState[ layerIndex ], delimiter = ',' )
-              # plot filter 
-          if lastState != -1:
-              diff = 100 *np.mean( ( abs(lastState[ layerIndex ] - currentState[ layerIndex ] ) / currentState[ layerIndex ] ) )
-              print( layerList[ layerIndex ] + ' : ' + str( diff ) )
-      return currentState
 
 #%% load data, devide it into training/test set, and seperate out the laebls 
 # normalize the feature to [0, 1]
@@ -278,5 +241,5 @@ def loadData( testTask, testFolder = 4, precision = 'original', sampleRate = 160
     else:
         trainFeature, trainLabel = processData( trainData, task = testTask )
     testFeature, testLabel = processData( testData, task = testTask ) # note: don't balance the test set
-    
+
     return trainFeature, trainLabel , testFeature, testLabel
