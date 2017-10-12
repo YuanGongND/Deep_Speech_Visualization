@@ -1,0 +1,2 @@
+testSample_num = 2170
+ trainSample_num = 7869
