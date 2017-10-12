@@ -10,9 +10,9 @@ end
 spectro = spectrogram( recording, floor( size( recording, 2 )/( width /2 + 1) ) , floor( size( recording, 2 )/ ( width + 1 ) ) - 1, 2*height , Fs, 'yaxis');
 
 if logSign == 1
-   spectroEnergy =  log( abs( spectro ) + 0.0001 );
+   spectroEnergy =  log( real( spectro ).^2 + 0.0001 );
 else
-   spectroEnergy =  abs( spectro ) ;
+   spectroEnergy =  real( spectro ).^2 ;
 end
 
 % rotate the spectrogram to correct position

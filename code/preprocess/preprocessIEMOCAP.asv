@@ -12,12 +12,11 @@ specWidth = 256;
 rng(3);
 
 %% for each session
-globalUtteranceIndex = 1;
 for sessionIndex = 1:5
     
     % initialize the data set 
-    waveformSet = zeros( 1500, WAVSIZE + 5 ); % +1 speaker label, +2 emotion label, +3 gender label, +4 speech length, +5 global utterance index
-    specSet = zeros( 1500, specHeigth *specWidth + 5 );
+    waveformSet = zeros( 1500, WAVSIZE + 4 ); % +1 speaker label, +2 emotion label, +3 gender label, +4 speech length
+    specSet = zeros( 1500, specHeigth *specWidth + 4 );
     dataIndex = 1;
     
     % get the dir of wav file and label file 
@@ -50,36 +49,33 @@ for sessionIndex = 1:5
                   mkdir( [ '../../processedData/rawWav/', num2str(sampleRate), '/', num2str( sessionIndex ) ] );
                end
                % record the raw audio
-               audiowrite( [ '../../processedData/rawWav/', num2str(sampleRate),'/', num2str( sessionIndex ), '/', num2str( globalUtteranceIndex, '%06d' ), '.wav'], audioClip , Fs );
+               audiowrite( [ '../../processedData/rawWav/', num2str(sampleRate),'/', num2str( sessionIndex ), '/', num2str( dataIndex, '%05d' ), '.wav'], audioClip , Fs );
                
                % rescale waveform and spectrogram (after rewrite to short-cut audio for extracting handcraft feature, won't affect handcraft feature extraction)
-               waveformSet( dataIndex, : ) = [ audioClip, categoricalLabelMatrix( utteranceIndex ), speakerMatrix( utteranceIndex ), genderMatrix( utteranceIndex ), ( endTimeMatrix( utteranceIndex ) - startTimeMatrix( utteranceIndex ) ), globalUtteranceIndex ];
-               specSet( dataIndex, : ) = [ audioSpec, categoricalLabelMatrix( utteranceIndex ), speakerMatrix( utteranceIndex ), genderMatrix( utteranceIndex ), ( endTimeMatrix( utteranceIndex ) - startTimeMatrix( utteranceIndex ) ), globalUtteranceIndex ];
+               waveformSet( dataIndex, : ) = [ audioClip, categoricalLabelMatrix( utteranceIndex ), speakerMatrix( utteranceIndex ), genderMatrix( utteranceIndex ), ( endTimeMatrix( utteranceIndex ) - startTimeMatrix( utteranceIndex ) ) ];
+               specSet( dataIndex, : ) = [ audioSpec, categoricalLabelMatrix( utteranceIndex ), speakerMatrix( utteranceIndex ), genderMatrix( utteranceIndex ), ( endTimeMatrix( utteranceIndex ) - startTimeMatrix( utteranceIndex ) ) ];
                dataIndex = dataIndex + 1;
-               globalUtteranceIndex = globalUtteranceIndex + 1;
            end
         end
     end
    
    % write the waveform file for each session ( original )
    precision = 'original';
-   if exist( [ '../../processedData/waveform/', num2str(sampleRate) ,'_', precision ] ) == 0
+   if exist( [ '../../processedData/waveform/', num2str(sampleRate) ,'_', precision ) == 0
        mkdir( [ '../../processedData/waveform/', num2str(sampleRate), '_', precision ] );
    end
-   if exist( [ '../../processedData/spectrogram/', num2str(sampleRate), '_', precision ] ) == 0
+   if exist( [ '../../processedData/spectrogram/', num2str(sampleRate), '_', precision ) ]== 0
        mkdir( [ '../../processedData/spectrogram/', num2str(sampleRate), '_', precision ] );
    end
-   if exist( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision ] ) == 0
+   if exist( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision ) ] == 0
        mkdir( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision ] );
    end
-   if exist( [ '../../processedData/toySpectrogram/', num2str(sampleRate), '_', precision ] ) == 0
+   if exist( [ '../../processedData/toySpectrogram/', num2str(sampleRate), '_', precision ) ] == 0
        mkdir( [ '../../processedData/toySpectrogram/', num2str(sampleRate), '_', precision ] );
    end
    
-   % toy (only have 100 samples, fast test)
-   %csvwrite( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:100, : ) );
-   %csvwrite( [ '../../processedData/toySpectrogram/', num2str(sampleRate), '_', precision, '/session_', num2str( sessionIndex ), '.csv' ],specSet( 1:100, : ) );
-   % full
+   csvwrite( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:100, : ) );
+   csvwrite( [ '../../processedData/toySpectrogram/', num2str(sampleRate), '_', precision, '/session_', num2str( sessionIndex ), '.csv' ],specSet( 1:100, : ) );
    csvwrite( [ '../../processedData/waveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:dataIndex-1, : ) );
    csvwrite( [ '../../processedData/spectrogram/', num2str(sampleRate), '_', precision, '/session_', num2str( sessionIndex ), '.csv' ],specSet( 1:dataIndex-1, : ) );
    

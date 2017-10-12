@@ -38,7 +38,7 @@ defaultNetSetting = {
 }
 
 #%% test convolutional network
-def specCNN( inputHeight = 256, inputWidth = 256, numClass = 2
+def specCNN( inputHeight = 256, inputWidth = 256, numClass = 2, convFilterNum = 32, convUnit = 'relu'
             netSetting, X_train, y_train, X_test, y_test ):
     
     input = input.resize( [ inputWidth, inputHeight ] )
@@ -60,9 +60,8 @@ plt.show()
     epochs = netSetting[ 'epochs' ]   
     lrate = netSetting[ 'lrate' ]
     
-    # Create the model
-    model = Sequential()
-    model.add(Convolution2D(featureNum, conSize, conSize, input_shape=(1, height, width), border_mode='same', activation='relu', W_constraint=maxnorm(3)))
+    input = keras.layers.Conv2D( filters = 16, kernel_size = ( 1, 64 ), strides=2, padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init, bias_initializer = biasInit  )( input )
+    input = keras.layers.Conv2D( filters = convFilterNum, kernal_size = [ conSize, conSize ], activation= convUnit, )
     #model.add(BatchNormalization())    
     model.add( Dropout( dropConv ) )
     

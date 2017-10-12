@@ -1,8 +1,8 @@
 function [ outputMatrix ] = changePrecision( inputMatrix, dataType, precision )
 % convert the matrix to desired precision
 
-data = inputMatrix( :, 1: size( inputMatrix, 2 ) - 4 );
-label = inputMatrix( :, size( inputMatrix, 2 ) - 4 + 1 : size( inputMatrix, 2 ) );
+data = inputMatrix( :, 1: size( inputMatrix, 2 ) - 5 );
+label = inputMatrix( :, size( inputMatrix, 2 ) - 5 + 1 : size( inputMatrix, 2 ) );
 
 if strcmp( precision, 'int8' ) == 1
     if strcmp( dataType, 'waveform' ) == 1
