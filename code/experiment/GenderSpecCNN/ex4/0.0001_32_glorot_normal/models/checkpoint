@@ -1,0 +1,7 @@
+model_checkpoint_path: "60_.ckpt"
+all_model_checkpoint_paths: "10_.ckpt"
+all_model_checkpoint_paths: "20_.ckpt"
+all_model_checkpoint_paths: "30_.ckpt"
+all_model_checkpoint_paths: "40_.ckpt"
+all_model_checkpoint_paths: "50_.ckpt"
+all_model_checkpoint_paths: "60_.ckpt"

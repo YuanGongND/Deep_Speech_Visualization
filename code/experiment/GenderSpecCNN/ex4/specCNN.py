@@ -22,7 +22,7 @@ def specCNN( input, inputHeight = 256, inputWidth = 256, numClass = 2, \
             convSize = 3, convStride = 1, convUnit = 'relu', l2_reg = 0.01, convLayerNum = 4, \
             convFilterNum = 32, init = 'lecun_uniform', biasInit = 'Zeros', \
             dropoutRate = 0.5, poolSize = 2, \
-            denseUnit = 'relu', denseLayerNum = 2, denseUnitNum = 32 ):
+            denseUnit = 'relu', denseLayerNum = 1, denseUnitNum = 32 ):
     
     # prepare the tensor    
     sampleNum = input.get_shape().as_list()[ 0 ]
@@ -36,11 +36,9 @@ def specCNN( input, inputHeight = 256, inputWidth = 256, numClass = 2, \
     
     # conv layer
     for layers in range( 0, convLayerNum ):
-        with tf.name_scope( 'conv' + str( layers ) ): 
-            input = Conv2D( filters = convFilterNum, kernel_size = [ convSize, convSize ], strides = convStride, \
+        input = Conv2D( filters = convFilterNum, kernel_size = [ convSize, convSize ], strides = convStride, \
                                     padding = 'same', activation= convUnit, kernel_regularizer=regularizers.l2( l2_reg ), \
                                     kernel_initializer = init, bias_initializer = biasInit )( input )
-        
         input = tf.layers.batch_normalization( input )
         input = tf.nn.dropout( input, keep_prob = dropoutRate )
         input = MaxPooling2D( pool_size=( poolSize, poolSize ), padding='valid' )( input )
@@ -53,8 +51,7 @@ def specCNN( input, inputHeight = 256, inputWidth = 256, numClass = 2, \
     
     # dense layer
     for layers in range( 0, denseLayerNum ):
-        with tf.name_scope( 'dense' + str( layers ) ): 
-            input = Dense( units = denseUnitNum, activation = denseUnit, kernel_initializer = init, bias_initializer = biasInit )( input )
+        input = Dense( units = denseUnitNum, activation = denseUnit, kernel_initializer = init, bias_initializer = biasInit )( input )
         input = tf.layers.batch_normalization( input )
         input = tf.nn.dropout( input, keep_prob = dropoutRate )
         print( 'Dense_' + str( layers ) +' : ' + str( input.shape ) )

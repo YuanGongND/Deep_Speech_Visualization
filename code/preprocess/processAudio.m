@@ -15,7 +15,8 @@ else
 end
 
 % normalize audio to make each audio between -1 and 1 (optional)
-    outputRecording = normalizeAudio( outputRecording );
+%## do not normalize single waveform    
+%outputRecording = normalizeAudio( outputRecording );
 
 end
 

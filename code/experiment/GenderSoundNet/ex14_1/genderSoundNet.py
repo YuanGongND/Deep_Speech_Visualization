@@ -23,7 +23,6 @@ import sys
 sys.path.append("../../model/")
 import soundNet
 import waveCNN
-import specCNN
 sys.path.append("../")
 import expUtil
 import numpy as np
@@ -40,15 +39,14 @@ os.mkdir( newFolderName )
 shutil.copy( os.path.basename(__file__), newFolderName ) # copy this file to the new folder
 shutil.copy( '../../model/soundNet.py', newFolderName )
 shutil.copy( '../../model/waveCNN.py', newFolderName )
-shutil.copy( '../../model/specCNN.py', newFolderName )
 shutil.copy( '../expUtil.py', newFolderName )
 
 # put all configuratation here
 thisTask = 'gender'
-dataType = 'spectrogram'
+dataType = 'toySpectrogram'
 
 # define the model
-model = specCNN.specCNN
+model = soundNet.soundNet  # define the model
 #model = waveCNN.waveCNN
 
 # according to the configuaration, change the coresponding setting 
@@ -60,12 +58,12 @@ trainFeature, trainLabel, testFeature, testLabel = expUtil.loadData( testFolder 
 
 #%% grid search
 
-#batch_sizeList = [ 32, 24, 16 ]
-#learningRateList = [ 1e-3, 5e-4, 1e-4, 5e-5, 1e-5 ]
-#initList = [ 'RandomUniform', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform' ]
-batch_sizeList = [ 32 ]
-learningRateList = [ 1e-4 ]
-initList = [ 'glorot_normal' ]
+batch_sizeList = [ 32, 24, 16 ]
+learningRateList = [ 1e-3, 5e-4, 1e-4, 5e-5, 1e-5 ]
+initList = [ 'RandomUniform', 'lecun_normal', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform' ]
+#batch_sizeList = [ 32 ]
+#learningRateList = [ 1e-4 ]
+#initList = [ 'glorot_normal' ]
 for batch_size in batch_sizeList:
     resultList = [  ]
     for learningRate in learningRateList:    
@@ -75,7 +73,7 @@ for batch_size in batch_sizeList:
             # train the model
             resultOnTrain, resultOnTest = expUtil.train( testFeature, testLabel, trainFeature, trainLabel, iteration_num = 100, \
                                                         lr_decay = 0.1, batch_size = batch_size, learningRate = learningRate, iterationNum = 100, \
-                                                        modelT = model, newFolderName = tempFolderName, init = init, saveSign = True, denseUnitNum = 64, \
+                                                        modelT = model, newFolderName = tempFolderName, init = init, saveSign = False, denseUnitNum = 64, \
                                                         dataType = dataType )
             resultList.append( resultOnTest[ -1 ] )
             np.savetxt( newFolderName + '\_' + str( batch_size ) +'_gridSearch.csv', resultList, delimiter = ',' )

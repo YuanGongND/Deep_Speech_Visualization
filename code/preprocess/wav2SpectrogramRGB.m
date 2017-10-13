@@ -18,7 +18,8 @@ end
 % rotate the spectrogram to correct position
 spectroEnergy = flipdim( spectroEnergy, 1 );
 
-spectroEnergy = spectroEnergy/ ( max( max ( spectroEnergy ) ) - min( min ( spectroEnergy ) ) ) ;
+%## do not conduct normalization on a single spectrogram
+%spectroEnergy = spectroEnergy/ ( max( max ( spectroEnergy ) ) - min( min ( spectroEnergy ) ) ) ;
 
 % cut the edge
 spectroEnergy = spectroEnergy( 1 : height, 1: width ); 
