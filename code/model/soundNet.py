@@ -94,15 +94,19 @@ def soundNet( input, numClass = 2, activationUnit = 'relu', l2_reg = 0.01, init 
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
         conv8Out = tf.identity( input, name = 'conv8Out' ) 
         
-    # dense
+    # flatten
     with tf.name_scope( 'flatten' ):
         newSubSequence_length = np.multiply( *input.get_shape().as_list()[ -2: ] )
         input = tf.reshape( input, [ example_num, newSubSequence_length ] )
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
+    
+    # dense1
     with tf.name_scope( 'dense1' ):
         input = keras.layers.core.Dense( denseUnitNum, activation = denseUnit, kernel_initializer = init, bias_initializer = biasInit )( input )
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
         dense1Out = tf.identity( input, name = 'dense1Out' ) 
+    
+    # dense2
     with tf.name_scope( 'dense2' ):
         output = keras.layers.core.Dense( numClass, activation = 'softmax' )( input )
         print( tf.get_default_graph().get_name_scope() + str( output.shape ) )

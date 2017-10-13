@@ -8,103 +8,66 @@ import tensorflow as tf
 import numpy as np
 import keras 
 import matplotlib.pyplot as plt
-from keras.models import Model
 from keras import regularizers
-
-defaultDataSetting = {
-    'height' : 256,
-    'width' : 252,
-    'height_use' : 128,
-    'trainFile' : 'trainSpecNoNoise.csv',
-    'testFile' : 'testSpecNoNoise.csv',
-    # 1 = categorical, 2 = valence, 3 = arousal , 4 = dominance
-    'labelType' : 99
-    }
-
-defaultNetSetting = {
-    'input_height' : 256,
-    'input_width' : 252,
-    'numClasses' : 0,
-    'featureNum' : 32, # 32
-    'conSize' : 3, # 3
-    'dropConv' : 0.5, #0.2
-    'dropDense' : 0.5,
-    'poolSize' : 2, 
-    'denseSize' : 32,
-    'denseLayerNum' : 2, # 2     
-    'convLayerNum' : 5, # 5
-    'epochs' : 200,
-    'lrate' : 0.001, # 0.001    
-}
+from keras.layers import Conv2D, Flatten, Dropout
+from keras.layers.pooling import MaxPooling2D
+from keras.layers.core import Dense
+import sys
+sys.path.append("../experiment")
+import expUtil
+import math
 
 #%% test convolutional network
-def specCNN( inputHeight = 256, inputWidth = 256, numClass = 2, convFilterNum = 32, convUnit = 'relu'
-            netSetting, X_train, y_train, X_test, y_test ):
+def specCNN( input, inputHeight = 256, inputWidth = 256, numClass = 2, \
+            convSize = 3, convStride = 1, convUnit = 'relu', l2_reg = 0.01, convLayerNum = 4, \
+            convFilterNum = 32, init = 'lecun_uniform', biasInit = 'Zeros', \
+            dropoutRate = 0.5, poolSize = 2, \
+            denseUnit = 'relu', denseLayerNum = 1, denseUnitNum = 32 ):
     
-    input = input.resize( [ inputWidth, inputHeight ] )
-    plt.imshow(a, cmap='hot', interpolation='nearest')
-plt.show()
+    # prepare the tensor    
+    sampleNum = input.shape[ 0 ]
+    showSample = input[ 5, : ]
+    showSample.resize( [ 256, 256 ] )
+    plt.imshow( showSample , cmap='hot', interpolation='nearest')
+    plt.show()
     input = tf.convert_to_tensor( input )
+    input = tf.reshape( input, [ sampleNum, inputWidth, inputHeight, 1 ] )
+    print( 'After preprocess : ' + str( input.shape ) )
     
-    # load setting
-    height = netSetting[ 'input_height' ]
-    width = netSetting[ 'input_width' ]
-    featureNum = netSetting[ 'featureNum' ]
-    conSize = netSetting[ 'conSize' ]
-    dropConv = netSetting[ 'dropConv' ]
-    dropDense = netSetting[ 'dropDense' ]
-    poolSize = netSetting[ 'poolSize' ]
-    denseSize = netSetting[ 'denseSize' ]
-    convLayerNum = netSetting[ 'convLayerNum' ]
-    denseLayerNum = netSetting[ 'denseLayerNum' ]
-    epochs = netSetting[ 'epochs' ]   
-    lrate = netSetting[ 'lrate' ]
+    # conv layer
+    for layers in range( 0, convLayerNum ):
+        input = Conv2D( filters = convFilterNum, kernel_size = [ convSize, convSize ], strides = convStride, \
+                                    padding = 'same', activation= convUnit, kernel_regularizer=regularizers.l2( l2_reg ), \
+                                    kernel_initializer = init, bias_initializer = biasInit )( input )
+        input = tf.layers.batch_normalization( input )
+        input = Dropout( rate = dropoutRate )( input )
+        input = MaxPooling2D( pool_size=( poolSize, poolSize ), padding='valid' )( input )
+        print( 'Conv_' + str( layers ) +' : ' + str( input.shape ) )
     
-    input = keras.layers.Conv2D( filters = 16, kernel_size = ( 1, 64 ), strides=2, padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init, bias_initializer = biasInit  )( input )
-    input = keras.layers.Conv2D( filters = convFilterNum, kernal_size = [ conSize, conSize ], activation= convUnit, )
-    #model.add(BatchNormalization())    
-    model.add( Dropout( dropConv ) )
+    newShape = input.get_shape().as_list()
+    newDim = newShape[ 1 ] *newShape[ 2 ] *newShape[ 3 ]
+    input = tf.reshape( input, [ sampleNum, newDim ] )
+    print( 'Flatten : ' + str( input.shape ) )
     
+    # dense layer
+    for layers in range( 0, denseLayerNum ):
+        input = Dense( units = denseUnitNum, activation = denseUnit, kernel_initializer = init, bias_initializer = biasInit )( input )
+        input = tf.layers.batch_normalization( input )
+        input = Dropout( rate = dropoutRate )( input )
+        print( 'Dense_' + str( layers ) +' : ' + str( input.shape ) )
+        
+    # output layer
+    output = Dense( numClass, activation = 'softmax' )( input )
+    print( 'Output : ' + str( output.shape ) )
     
-    for layers in range( 1, convLayerNum ):
-        model.add(Convolution2D(featureNum, conSize, conSize, activation='relu', border_mode='same', W_constraint=maxnorm(3)))
-        #model.add(BatchNormalization())        
-        model.add(MaxPooling2D(pool_size=(poolSize, poolSize)))
+    return output
 
-    model.add(Flatten())
+#%%    
+if __name__ == '__main__':
+    toyData = expUtil.iter_loadtxt( '../../processedData/toySpectrogram/16000_original/session_1.csv' )[ 0:15, 0:65536 ]
+    toyData = ( toyData - np.mean( toyData ) ) /math.sqrt( np.var( toyData ) )
+    testInput =  toyData[ 0:15, 0: 65536 ]
+    specCNN( input = testInput )
     
-    for layers in range( 1, denseLayerNum ):
-        model.add(Dense(denseSize, activation='relu', W_constraint=maxnorm(3)))
-        model.add( Dropout( dropDense ) )
-    
-    model.add( Dense( 1, init = 'normal' ) )
-    
-    # Compile model
-    decay = lrate/epochs
-    #sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)
-    # model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-    adam = Adam( lr=lrate, decay = decay )
-    model.compile(loss='mean_squared_error', optimizer = adam )    
-    print(model.summary())
-    
-    # Fit the model
-
-    history = model.fit(X_train, y_train, validation_data=(X_test, y_test), nb_epoch=epochs, batch_size=32 )
-     
-    # save model    
-    time = datetime.datetime.now()
-    timeName = str( time.day ) + '_' + str( time.hour ) + '_' +str( time.minute )
-    modelName =  timeName + '_' + str( height ) + 'iemoReg.model'
-    model.save( modelName )    
-    
-    # save training history
-    historyName =  timeName + '_' + str( height ) + 'iemoReg.history'
-    with open( historyName ,'wb') as handle:
-        pickle.dump( history.history, handle, protocol=pickle.HIGHEST_PROTOCOL )
-
-
-    # Final evaluation of the model
-    scores = model.evaluate(X_test, y_test, verbose=0)
-    print("Accuracy: %.2f%%" % (scores *100))
-    
-    return model
+# sns.distplot(toyData, hist=False, rug=True);
+#import seaborn as sns
