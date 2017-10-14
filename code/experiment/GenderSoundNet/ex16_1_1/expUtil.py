@@ -318,6 +318,10 @@ def countElements( inputM ):
 #%%
 def plotInputDistribution( inputM ):
     output = np.reshape( inputM, [ countElements( inputM ) ] )
-    fig1 = plt.figure(  )
+    fig1 = plt.figure(1)
     ax1 = fig1.gca()
-    ax1.hist( output )
+    fig2 = plt.figure(2)
+    ax2 = fig2.gca()
+    
+    sns.distplot( output, hist=False, rug=True, ax = ax1)
+    ax2.plot( [ 1, 2, 3 ], [ 1, 2, 3 ] )

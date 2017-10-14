@@ -13,6 +13,7 @@ Conduct erxperiment on IEMOCAP, three labels:
 """
 
 import os
+import seaborn as sns
 from sys import argv
 
 newFolderName = 'test'
@@ -22,11 +23,6 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = str(gpuI)
 
 import sys
-sys.path.append("../../model/")
-import soundNet
-import waveCNN
-sys.path.append("../")
-import expUtil
 import numpy as np
 import tensorflow as tf
 from keras.utils import np_utils
@@ -74,6 +70,27 @@ def visualizeFilter( layerName = 'conv1', modelIndexList = list( range( 10, 110,
     fig.set_size_inches( 250, 10 )
     fig.savefig( filename = folderName + layerName +'Visualization.png', dpi = 100 )
 
+
+#%% calculate the number of elements of an high-dimensional tensor
+def countElements( inputM ):
+    inputShape = inputM.shape
+    dim = 1
+    for i in inputShape:
+        dim *= i
+    return dim
+
+#%%
+def plotInputDistribution( inputM ):
+    output = np.reshape( inputM, [ countElements( inputM ) ] )
+    fig1 = plt.figure(  )
+    ax1 = fig1.gca()
+    ax1.hist( output )
+    
+#%% 
+def getTensorByLayer( sess, layerName ):
+    pass
+    
+#%%
 if __name__ == '__main__':
 #    #%% get the name of test 
     folderName = '../GenderSoundNet/ex15/0.0001_32_RandomUniform/models/'
@@ -92,25 +109,25 @@ if __name__ == '__main__':
           #rGraph = sess.graph
           allFilter =  tf.get_collection( tf.GraphKeys.VARIABLES, scope= layerName )
           print( allFilter )
-          kernal = allFilter[ 3 ].eval( )
-          filterNum = kernal.shape[ 3 ]
-          filterNum = 16
-          for filterIndex in range( 0, filterNum ):
-              tempFilter = kernal[ 0, :, 0, filterIndex ]
-              filterFFT = np.fft.fft( tempFilter )
-              print( tempFilter )
-              # plot filter
-              plt.subplot( len( modelIndexList ), filterNum *2, figureIndex )
-              plt.plot( list( range( len( tempFilter ) ) ), tempFilter, linewidth = 0.5 )
-              plt.xticks( [ ] )
-              plt.yticks( [ ] )
-              # plot fft
-              figureIndex += 1
-              plt.subplot( len( modelIndexList ),  filterNum *2, figureIndex )
-              plt.plot( list( range( len( filterFFT ) ) ), filterFFT, 'r', linewidth = 0.5 )
-              #plt.xticks( [ ] )
-              #plt.yticks( [ ] )
-              figureIndex += 1
-    fig = plt.gcf()
-    fig.set_size_inches( 250, 10 )
-    fig.savefig( filename = folderName + layerName +'Visualization.png', dpi = 100 )
+#          kernal = allFilter[ 3 ].eval( )
+#          filterNum = kernal.shape[ 3 ]
+#          filterNum = 16
+#          for filterIndex in range( 0, filterNum ):
+#              tempFilter = kernal[ 0, :, 0, filterIndex ]
+#              filterFFT = np.fft.fft( tempFilter )
+#              print( tempFilter )
+#              # plot filter
+#              plt.subplot( len( modelIndexList ), filterNum *2, figureIndex )
+#              plt.plot( list( range( len( tempFilter ) ) ), tempFilter, linewidth = 0.5 )
+#              plt.xticks( [ ] )
+#              plt.yticks( [ ] )
+#              # plot fft
+#              figureIndex += 1
+#              plt.subplot( len( modelIndexList ),  filterNum *2, figureIndex )
+#              plt.plot( list( range( len( filterFFT ) ) ), filterFFT, 'r', linewidth = 0.5 )
+#              #plt.xticks( [ ] )
+#              #plt.yticks( [ ] )
+#              figureIndex += 1
+#    fig = plt.gcf()
+#    fig.set_size_inches( 250, 10 )
+#    fig.savefig( filename = folderName + layerName +'Visualization.png', dpi = 100 )

@@ -20,7 +20,6 @@ from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import os
 import math
-import seaborn as sns
 
 #%% slice the matrix using discontinuous row index 
 def discontSliceRow( matrix, index ):
@@ -302,8 +301,8 @@ def loadData( testTask, testFolder = 4, precision = 'original', sampleRate = 160
         trainFeature, trainLabel = processData( trainData, task = testTask, dataType = dataType )
     testFeature, testLabel = processData( testData, task = testTask, dataType = dataType ) # note: don't balance the test set
     
-    plotInputDistribution( trainFeature[ 1:10, : ] )
-    plotInputDistribution( testFeature[ 1:10, : ] )
+    plotInputDistribution( trainFeature )
+    plotInputDistribution( testFeature )
     
     return trainFeature, trainLabel , testFeature, testLabel
 
@@ -318,6 +317,10 @@ def countElements( inputM ):
 #%%
 def plotInputDistribution( inputM ):
     output = np.reshape( inputM, [ countElements( inputM ) ] )
-    fig1 = plt.figure(  )
+    fig1 = plt.figure(1)
     ax1 = fig1.gca()
-    ax1.hist( output )
+    fig2 = plt.figure(2)
+    ax2 = fig2.gca()
+    
+    sns.distplot( output, hist=False, rug=True, ax = ax1)
+    ax2.plot( [ 1, 2, 3 ], [ 1, 2, 3 ] )
