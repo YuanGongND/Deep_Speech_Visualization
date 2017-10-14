@@ -10,6 +10,7 @@ import tensorflow as tf
 from keras.utils import np_utils
 from imblearn.under_sampling import NearMiss, AllKNN, RandomUnderSampler
 from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
+from sklearn.decomposition import PCA
 import sys
 sys.path.append("../model/")
 import soundNet
@@ -302,8 +303,8 @@ def loadData( testTask, testFolder = 4, precision = 'original', sampleRate = 160
         trainFeature, trainLabel = processData( trainData, task = testTask, dataType = dataType )
     testFeature, testLabel = processData( testData, task = testTask, dataType = dataType ) # note: don't balance the test set
     
-    plotInputDistribution( trainFeature[ 1:10, : ] )
-    plotInputDistribution( testFeature[ 1:10, : ] )
+    plotInputDistribution( trainFeature )
+    #plotInputDistribution( testFeature[ 0, : ] )
     
     return trainFeature, trainLabel , testFeature, testLabel
 
@@ -315,9 +316,33 @@ def countElements( inputM ):
         dim *= i
     return dim
 
-#%%
-def plotInputDistribution( inputM ):
+#%% plot the distribution of data, compatatbale with high-dimensional np arrays
+def plotInputDistribution( inputM, saveFolder = '' ):
     output = np.reshape( inputM, [ countElements( inputM ) ] )
     fig1 = plt.figure(  )
     ax1 = fig1.gca()
-    ax1.hist( output )
+    binwidth = ( max( output ) - min( output ) )/1000
+    ax1.hist( output, bins=np.arange( min( output ), max( output ) + binwidth, binwidth ) )
+    if saveFolder != '':
+        fig1.savefig( saveFolder + '/hist.png' )
+
+# plot the filter for both waveform (1-D), and spectrogram (2-D)
+def plotConvFilters( inputM, saveFolder = '' ):
+    # inputM in the shape of [ filter_height, filter_width, input_channel_num, output_channel_num ]
+    # , in which the total number of 1-D filter is input_channel_num *output_channle_num
+    input_channel_num = np.shape( inputM )[ 2 ]
+    output_channel_num = np.shape( inputM )[ 3 ]
+    fig, ax = plt.subplots( nrows= input_channel_num, ncols= output_channel_num )
+    for input_channel in range( 0, input_channel_num ):
+        for output_channel in range( 0, output_channel_num ):
+            tempFilter = inputM[ :, :, input_channel, output_channel ]
+            # if 1-D filter, waveform
+            if np.shape( tempFilter )[ 0 ] == 1:
+                tempFilter = tempFilter.reshape( np.shape( tempFilter )[ 1 ] )
+                ax[ input_channel ][ output_channel ].plot( list( range( len( tempFilter ) ) ), tempFilter, linewidth = 0.5 )
+            # if 2-D filter, spectrogram
+            elif np.shape( tempFilter )[ 0 ] != 1:
+                ax[ input_channel ][ output_channel_num ].imshow( tempFilter )
+    fig.set_size_inches( input_channel_num *2, output_channel_num *2 )
+    fig.savefig( filename = saveFolder + 'allFilters.png', dpi = 200 )
+                
