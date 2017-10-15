@@ -11,6 +11,7 @@ from keras.utils import np_utils
 from imblearn.under_sampling import NearMiss, AllKNN, RandomUnderSampler
 from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import sys
 sys.path.append("../model/")
 import soundNet
@@ -326,7 +327,7 @@ def plotInputDistribution( inputM, saveFolder = '' ):
     if saveFolder != '':
         fig1.savefig( saveFolder + '/hist.png' )
 
-# plot the filter for both waveform (1-D), and spectrogram (2-D)
+#%% plot the filter for both waveform (1-D), and spectrogram (2-D)
 def plotConvFilters( inputM, saveFolder = '' ):
     # inputM in the shape of [ filter_height, filter_width, input_channel_num, output_channel_num ]
     # , in which the total number of 1-D filter is input_channel_num *output_channle_num
@@ -345,4 +346,46 @@ def plotConvFilters( inputM, saveFolder = '' ):
                 ax[ input_channel ][ output_channel_num ].imshow( tempFilter )
     fig.set_size_inches( input_channel_num *2, output_channel_num *2 )
     fig.savefig( filename = saveFolder + 'allFilters.png', dpi = 200 )
-                
+    
+#%% plot TSNE (mainly for dense layer, but can also be used for (flattened) convulutional layers )
+def plotTSNE( inputM, label ):
+    inputShape = np.shape( inputM )
+    
+    # if already dense layer, in shape [ n_samples, n_features ]
+    if len( inputShape ) == 2:
+        tsneResult = calculateTSNE( inputM )
+    
+    # if conv layers, need first flatten to [ n_samples, n_features ]
+    elif len( inputShape ) == 4:
+        # flatten inputM 
+        num_samples = inputShape[ 0 ]
+        num_elements = countElements( inputM )
+        outputM = np.reshape( inputM, [ num_samples, int( num_elements /num_samples ) ] )
+        tsneResult = calculateTSNE( outputM )
+    label = [ mapLabelToColor( elem ) for elem in label ]    
+    plt.scatter( x = tsneResult[ :,0 ], y = tsneResult[ :, 1 ], c = label )
+    return tsneResult
+
+#%% calculate t-SNE
+def calculateTSNE( inputM ):
+    randomState = 7
+    # if many dimensions, first use PCA than t-sne
+    if np.shape( inputM )[ 1 ] >= 128:
+        pca_50 = PCA( n_components = 50,  random_state= randomState )
+        pca_50_result = pca_50.fit_transform( inputM )
+        tsne = TSNE( random_state= randomState )
+        tsneResult = tsne.fit_transform( pca_50_result )
+    
+    # if only a few dimensions, directly use t-sne
+    else:
+        tsne = TSNE( random_state= randomState )
+        tsneResult = tsne.fit_transform( inputM )
+    return tsneResult
+
+#%% map label to color
+def mapLabelToColor( label ):
+    if label == 0:
+        color = 'r'
+    elif label == 1:
+        color = 'b'
+    return color
