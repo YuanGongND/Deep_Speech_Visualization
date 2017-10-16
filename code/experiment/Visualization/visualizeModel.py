@@ -35,6 +35,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 import time
 import shutil
+sys.path.append("../")
+import expUtil
 
 def visualizeFilter( layerName = 'conv1', modelIndexList = list( range( 10, 110, 10 ) ), folderName = '' ):
     
@@ -69,22 +71,6 @@ def visualizeFilter( layerName = 'conv1', modelIndexList = list( range( 10, 110,
     fig = plt.gcf()
     fig.set_size_inches( 250, 10 )
     fig.savefig( filename = folderName + layerName +'Visualization.png', dpi = 100 )
-
-
-#%% calculate the number of elements of an high-dimensional tensor
-def countElements( inputM ):
-    inputShape = inputM.shape
-    dim = 1
-    for i in inputShape:
-        dim *= i
-    return dim
-
-#%%
-def plotInputDistribution( inputM ):
-    output = np.reshape( inputM, [ countElements( inputM ) ] )
-    fig1 = plt.figure(  )
-    ax1 = fig1.gca()
-    ax1.hist( output )
     
 #%% 
 def getTensorByLayer( sess, layerName ):
@@ -93,22 +79,44 @@ def getTensorByLayer( sess, layerName ):
 #%%
 if __name__ == '__main__':
 #    #%% get the name of test 
-    folderName = '../GenderSoundNet/ex15/0.0001_32_RandomUniform/models/'
+    folderName = '../GenderSoundNet/ex18/0.0001_32_glorot_normal/models/'
 #    visualizeFilter( layerName = 'conv1', modelIndexList = list( range( 1, 45, 5 ) ), folderName = folderName )
 #    plt.show(  )
 
     layerName = 'conv1'
-    modelIndexList = [ 100 ]
-    figureIndex = 1    
+    modelIndexList = list( range( 10, 110, 10 ) )
+    figureIndex = 0  
     for modelIndex in modelIndexList:
         modelName = folderName + str( modelIndex ) + '_.ckpt'
         saver = tf.train.import_meta_graph( modelName + '.meta' )
         with tf.Session() as sess:
           saver.restore( sess, modelName )
-          print("Model restored.")
-          #rGraph = sess.graph
-          allFilter =  tf.get_collection( tf.GraphKeys.VARIABLES, scope= layerName )
+          print( 'Model ' + str( modelIndex ) + ' restored.' )
+          rGraph = sess.graph
+          
+          # input a random array
+          testInput =  np.zeros( [ 32, 96000 ] )
+          
+          # print all the operations
+          #for op in tf.get_default_graph().get_operations():
+          #    print (str(op.name))
+              
+          # get the tensors from the network
+          testLayer = rGraph.get_tensor_by_name( 'conv1/' + layerName + 'Out:0' )
+          networkInput = rGraph.get_tensor_by_name( 'inputx:0' )          
+          
+          # get the output
+          layerOutput = sess.run( testLayer, feed_dict = { networkInput: testInput } )
+          
+          expUtil.plotInputDistribution( layerOutput, folderName )
+          allFilter =  rGraph.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope= layerName )
           print( allFilter )
+          kernal = allFilter[ figureIndex ].eval( )
+          print( np.shape( kernal ) )
+          expUtil.plotConvFilters( kernal, folderName + str( modelIndex ) + '.png' )
+          sess.close( )
+          figureIndex = figureIndex + 2
+#          print( allFilter )
 #          kernal = allFilter[ 3 ].eval( )
 #          filterNum = kernal.shape[ 3 ]
 #          filterNum = 16

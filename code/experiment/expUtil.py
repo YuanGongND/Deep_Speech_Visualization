@@ -13,9 +13,14 @@ from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import sys
-sys.path.append("../model/")
-import soundNet
-import waveCNN
+if __name__ == '__main__':
+    sys.path.append("../model/")
+    import soundNet
+    import waveCNN
+else:
+    sys.path.append("../../model/")
+    import soundNet
+    import waveCNN
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
@@ -23,6 +28,7 @@ import matplotlib.pyplot as plt
 import os
 import math
 import seaborn as sns
+import math
 
 #%% slice the matrix using discontinuous row index 
 def discontSliceRow( matrix, index ):
@@ -136,13 +142,17 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
            modelT = soundNet.soundNet, init = 'lecun_uniform', saveSign = False, denseUnitNum = 64,\
            dataType = 'waveform' ):
     
+    # define data size, different size for waveform and spectrogram
     if dataType == 'waveform' or dataType == 'toyWaveform':
         dataSize = 96000
     else:
         dataSize = 256 *256
     
+    # make folders 
     os.mkdir( newFolderName + '/weight' )
     os.mkdir( newFolderName + '/models' )
+    
+    # initialize 
     result = np.zeros( [ 2, iteration_num ] )
     class_num = testLabel.shape[ 1 ]
     train_datasize = trainFeature.shape[ 0 ]
@@ -156,9 +166,12 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
 
         # fix random index for reproducing result 
         tf.set_random_seed( 17 )
+        
+        # define place holders 
         input_x = tf.placeholder( tf.float32, shape = ( batch_size, dataSize ), name = 'inputx' )
         input_y = tf.placeholder( tf.float32, shape = ( batch_size, class_num ), name = 'inputy' )
         
+        # define a set of tensors for training
         prediction = modelT( input_x, numClass = class_num, l2_reg = 0.5, init = init, denseUnitNum  = denseUnitNum )
         loss = tf.reduce_mean( tf.nn.softmax_cross_entropy_with_logits( logits = prediction, labels= input_y ) )
         train_step = tf.train.AdamOptimizer( learning_rate ).minimize( loss, global_step = global_step )
@@ -166,50 +179,74 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
         correct_prediction = tf.equal( tf.argmax( prediction, 1 ), tf.argmax( input_y, 1 )  )
         accuracy = tf.reduce_mean( tf.cast( correct_prediction, tf.float32 ), name="acc_restore" )
         
-        # initialize the data 
+        # initialize the variables
         init_op = tf.global_variables_initializer(  )
         sess.run( init_op )
+        
+        # initialize the model saver
         saver = tf.train.Saver( max_to_keep= 100 )
+        
+        # print the list of variables
         print( tf.trainable_variables() )
         
         # number of iterations
         for iteration in range( 0, iteration_num ):
+            
             # each batch
             for i in range( 0, 1 *int( train_datasize / batch_size ) ):
                 
+                # prepare data for each train batch
                 start = ( i * batch_size ) % train_datasize
                 end = min( start + batch_size, train_datasize )
-                
                 inputTrainFeature = trainFeature[ start: end ]
                 inputTrainLabel = trainLabel[ start: end ]
                 
+                # train the model
                 _, lossShow = sess.run( [ train_step, loss ], feed_dict = { input_x: inputTrainFeature, input_y: inputTrainLabel } )
                 #print( 'loss = ' + str( lossShow ) )
              
             # get accuracy on a small subset of test data (just several epoch), a very fast approximation of the performance 
+            # number of batches to test
             testBatchNum = 3
+            # initialize result recorder
             testSubsetResult = [ None ] *( batch_size *testBatchNum )
             testSubsetLabel = [ None ] *( batch_size *testBatchNum )
+            outputBeforeDense = [ None ] *( batch_size *testBatchNum )
+            outputDense1 = [ None ] *( batch_size *testBatchNum )
+            # get intermediate tensor 
+            flattenOut = sess.graph.get_tensor_by_name( 'flatten/flattenOut:0' )   
+            dense1Out = sess.graph.get_tensor_by_name( 'dense1/dense1Out:0' )        
+            # start test
             for testBatch in range( 0, testBatchNum ): # 3*32=96 test samples
+                # prepare input data    
                 start = testBatch * batch_size 
                 end = start + batch_size
                 inputTestFeature = testFeature[ start: end, : ]
                 inputTestLabel = testLabel[ start: end, : ]     
-                tempTestResult, tempAccuracyTest = sess.run( [ prediction, accuracy ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
+                # run test
+                tempTestResult, tempAccuracyTest, tempoutputBeforeDense, tempoutputDense1 = sess.run( [ prediction, accuracy, flattenOut, dense1Out ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
+                # record result
                 testSubsetLabel[ start :end ] = np.argmax( inputTestLabel, 1 )
                 testSubsetResult[ start :end ] = np.argmax( tempTestResult, 1 ) 
+                outputBeforeDense[ start :end ] = tempoutputBeforeDense
+                outputDense1[ start :end ] = tempoutputDense1
+                
+                # plot the t-SNE before the dense layer
+                plotTSNE( outputBeforeDense, testSubsetLabel, newFolderName + '/models/tSNE_1_' + str( iteration ) + '.png' )
+                plotTSNE( outputDense1, testSubsetLabel, newFolderName + '/models/tSNE_2_' + str( iteration ) + '.png' )
+                
             #np.savetxt( newFolderName + '/testResult.csv', testResult, delimiter = ',' )
             #np.savetxt( newFolderName + '/testLabel.csv', inputTestLabel, delimiter = ',' )
             accuracyTest = accuracy_score( testSubsetLabel, testSubsetResult )
             print( confusion_matrix( testSubsetLabel, testSubsetResult ) )
             result[ 0, iteration ] = accuracyTest
-            print( 'Epoch:' + str( iteration ) + ' result on test: ' + str( accuracyTest ) )
+            print( 'Epoch:' + str( iteration + 1 ) + ' result on test: ' + str( accuracyTest ) )
             
             # get accuracy on a small subset of training data (just one epoch), a very fast approximation of the training loss/ overfitting 
             inputTestTrainFeature = trainFeature[ 0: batch_size, : ]
             inputTestTrainLabel = trainLabel[ 0: batch_size, : ]
             testTrainResult, accuracyTrain = sess.run( [ prediction, accuracy ], feed_dict = { input_x: inputTestTrainFeature, input_y: inputTestTrainLabel } ) 
-            print( 'Epoch:' + str( iteration ) + ' result on train: ' + str( accuracyTrain ) )
+            print( 'Epoch:' + str( iteration + 1 ) + ' result on train: ' + str( accuracyTrain ) )
             np.savetxt( newFolderName + '/testTrainResult.csv', testTrainResult, delimiter = ',' )
             np.savetxt( newFolderName + '/testTrainLabel.csv', inputTestTrainLabel, delimiter = ',' )
             result[ 1, iteration ] = accuracyTrain
@@ -220,14 +257,15 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             np.savetxt( newFolderName + '/accuracy.csv', result, delimiter = ',' )
             
             # print variable
-#            if iteration == 0:
-#                lastState = printVariable( sess, newFolderName = newFolderName )
-#            else:
-#                lastState = printVariable( sess, lastState, iteration + 1, newFolderName = newFolderName )
+            if iteration == 0:
+                lastState = printVariable( sess, newFolderName = newFolderName )
+            else:
+                lastState = printVariable( sess, lastState, iteration + 1, newFolderName = newFolderName )
             #np.savetxt( newFolderName + '/weightConv1' + str( iteration + 1 ) + '.csv', lastState, delimiter = ',' )
             
             # save model every 10 epoches
-            if ( iteration + 1 )%10 == 0 and saveSign == True:            
+            #if ( iteration + 1 )%10 == 0 and saveSign == True:
+            if ( iteration + 1 ) < 10 and saveSign == True:
                 save_path = saver.save( sess, newFolderName + '/models/' + str( iteration + 1 ) + '_.ckpt' )
                 print("Model saved in file: %s" % save_path)
             
@@ -236,38 +274,46 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             plt.plot( list( range( iteration_num ) ), resultOnTrain )
             plt.plot( list( range( iteration_num ) ), resultOnTest )
             plt.savefig( newFolderName + '/accuracy.png' )
+            plt.close('all')
             
     return resultOnTrain, resultOnTest
 
 #%%
 def printVariable( sess, lastState = -1, iteration = 1, newFolderName = -1 ):     
-      layerList = [ 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8', 'dense1', 'dense2' ]
+      #layerList = [ 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8', 'dense1', 'dense2' ]
+      layerList = [  'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8' ]
       currentState = [ 0 ] *len( layerList )
       for layerIndex in range( len( layerList ) ):
-          allFilter =  tf.get_collection( tf.GraphKeys.GLOBAL_VARIABLES, scope= layerList[ layerIndex ] )
-          kernal = allFilter[ 0 ].eval( )
+          
+          # get all parameters of this layer
+          allFilter =  tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope= layerList[ layerIndex ] )
+          print( allFilter )
+          
+          # for conv layers
           if layerIndex <= 7:
-              filterNum = kernal.shape[ 3 ]
-              filterSize = kernal.shape[ 1 ]
-          else:
-              filterNum = kernal.shape[ 1 ]
-              filterSize = kernal.shape[ 0 ]
-          currentState[ layerIndex ] = np.zeros( [ filterNum, filterSize ] )
-          for filterIndex in range( 0, filterNum ):
-              if layerIndex <= 7:
-                  tempFilter = kernal[ 0, :, 0, filterIndex ]
-              else:
-                  tempFilter = kernal[ :, filterIndex ]
-              #tempFilter = kernal[ : , filterIndex ]
-              #filterFFT = np.fft.fft( tempFilter )
-              currentState[ layerIndex ][ filterIndex, : ] = tempFilter
-          np.savetxt( newFolderName + '/weight/' +  str( iteration ) + '_' + layerList[ layerIndex ] + '.csv', currentState[ layerIndex ], delimiter = ',' )
-              # plot filter 
-          if lastState != -1:
-              diff = 100 *np.mean( ( abs(lastState[ layerIndex ] - currentState[ layerIndex ] ) / currentState[ layerIndex ] ) )
-              print( layerList[ layerIndex ] + ' : ' + str( diff ) )
+              
+              # get the weight of this layer
+              kernal = allFilter[ 0 ].eval( )
+              if layerIndex == 0:
+                  plotConvFilters( kernal, newFolderName + '/models/' +str( iteration ) + '.png' )
+              
+              # save the weight of current layer
+              currentState[ layerIndex ] = kernal
+              
+              # track the difference with last state
+              if lastState != -1:
+                  diff = trackChange( currentState[ layerIndex ], lastState[ layerIndex ] )
+                  print( layerList[ layerIndex ] + ' : ' + str( diff )  )
+          
       return currentState
 
+#%% track change ( in percentile ) of different layers according to epochs
+def trackChange( currentState, lastState ):
+    difference = lastState - currentState 
+    diffInPercentile = difference / currentState
+    absDiffInPercentile = np.abs( diffInPercentile )
+    meanChange = np.mean( absDiffInPercentile )
+    return meanChange *100
 #%% load data, devide it into training/test set, and seperate out the laebls 
 # normalize the feature to [0, 1]
 # for emotion tests, filter out value = 4 (other emotions)
@@ -326,6 +372,7 @@ def plotInputDistribution( inputM, saveFolder = '' ):
     ax1.hist( output, bins=np.arange( min( output ), max( output ) + binwidth, binwidth ) )
     if saveFolder != '':
         fig1.savefig( saveFolder + '/hist.png' )
+        plt.close('all')
 
 #%% plot the filter for both waveform (1-D), and spectrogram (2-D)
 def plotConvFilters( inputM, saveFolder = '' ):
@@ -340,15 +387,27 @@ def plotConvFilters( inputM, saveFolder = '' ):
             # if 1-D filter, waveform
             if np.shape( tempFilter )[ 0 ] == 1:
                 tempFilter = tempFilter.reshape( np.shape( tempFilter )[ 1 ] )
-                ax[ input_channel ][ output_channel ].plot( list( range( len( tempFilter ) ) ), tempFilter, linewidth = 0.5 )
+                if input_channel_num == 1:
+                    ax[ output_channel ].set_ylim( [ -0.1, 0.1 ] )
+                    ax[ output_channel ].plot( list( range( len( tempFilter ) ) ), tempFilter, linewidth = 0.5 )
+                else:
+                    ax[ input_channel ][ output_channel ].set_ylim( [ -0.1, 0.1 ] )
+                    ax[ input_channel ][ output_channel ].plot( list( range( len( tempFilter ) ) ), tempFilter, linewidth = 0.5 )
             # if 2-D filter, spectrogram
             elif np.shape( tempFilter )[ 0 ] != 1:
-                ax[ input_channel ][ output_channel_num ].imshow( tempFilter )
-    fig.set_size_inches( input_channel_num *2, output_channel_num *2 )
-    fig.savefig( filename = saveFolder + 'allFilters.png', dpi = 200 )
+                if input_channel_num == 1:
+                    ax[ output_channel ].imshow( tempFilter )
+                else:
+                    ax[ input_channel ][ output_channel ].imshow( tempFilter )
+    if input_channel_num != 1:
+        fig.set_size_inches( input_channel_num *2, output_channel_num *2 )
+    else: 
+        fig.set_size_inches( output_channel_num *2, 2 )
+    fig.savefig( filename = saveFolder, dpi = 200 )
+    plt.close('all')
     
 #%% plot TSNE (mainly for dense layer, but can also be used for (flattened) convulutional layers )
-def plotTSNE( inputM, label ):
+def plotTSNE( inputM, label, saveFolder ):
     inputShape = np.shape( inputM )
     
     # if already dense layer, in shape [ n_samples, n_features ]
@@ -364,28 +423,39 @@ def plotTSNE( inputM, label ):
         tsneResult = calculateTSNE( outputM )
     label = [ mapLabelToColor( elem ) for elem in label ]    
     plt.scatter( x = tsneResult[ :,0 ], y = tsneResult[ :, 1 ], c = label )
+    plt.savefig( filename = saveFolder, dpi = 100 )
+    plt.close('all')
     return tsneResult
 
 #%% calculate t-SNE
 def calculateTSNE( inputM ):
     randomState = 7
+    tsne = TSNE( random_state= randomState, perplexity= 16.0, n_iter=5000, learning_rate=10 )
     # if many dimensions, first use PCA than t-sne
     if np.shape( inputM )[ 1 ] >= 128:
-        pca_50 = PCA( n_components = 50,  random_state= randomState )
+        pca_50 = PCA( n_components = 128,  random_state= randomState )
         pca_50_result = pca_50.fit_transform( inputM )
-        tsne = TSNE( random_state= randomState )
         tsneResult = tsne.fit_transform( pca_50_result )
     
     # if only a few dimensions, directly use t-sne
     else:
-        tsne = TSNE( random_state= randomState )
         tsneResult = tsne.fit_transform( inputM )
+#        pca_50 = PCA( n_components = 2,  random_state= randomState )
+#        tsneResult = pca_50.fit_transform( inputM )
     return tsneResult
 
 #%% map label to color
 def mapLabelToColor( label ):
+    print( label )
     if label == 0:
         color = 'r'
     elif label == 1:
         color = 'b'
+    elif label == 2:
+        color = 'm'
+    elif label == 3:
+        color = 'k'
     return color
+
+def sineInit(  ):
+    return 
