@@ -1,0 +1,2 @@
+testSample_num = 100
+ trainSample_num = 400
