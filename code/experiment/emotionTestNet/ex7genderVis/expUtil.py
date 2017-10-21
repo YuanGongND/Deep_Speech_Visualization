@@ -158,7 +158,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
     
     # initialize 
     result = np.zeros( [ 2, iteration_num ] )
-    diffResult = np.zeros( [ 4, iteration_num ] )
+    diffResult = np.zeros( [ 8, iteration_num ] )
     class_num = testLabel.shape[ 1 ]
     train_datasize = trainFeature.shape[ 0 ]
     

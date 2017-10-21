@@ -101,8 +101,7 @@ def waveCNNBN( input, timeStep_num = 150, convLayer_num_front = 8, filter_num = 
     # convLayer_num *( conv + maxpooling )
     for i in range( convLayer_num_front ):
         input = tf.layers.batch_normalization( input )
-        with tf.name_scope( 'conv' + str( i + 1 ) ):
-            input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_front ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init )( input )
+        input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_front ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init )( input )
         print( input.shape )
         input = keras.layers.pooling.MaxPooling2D( ( 1, pooling_size ), padding='same' )( input )
         print( input.shape )

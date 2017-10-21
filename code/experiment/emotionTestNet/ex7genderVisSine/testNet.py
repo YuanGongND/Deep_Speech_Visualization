@@ -28,13 +28,12 @@ def sineInit( shape, dtype=None ):
     print( shape )
     InitKernal = np.zeros( shape )
     # the rest filter
+    InitKernal[ 0, :, 0, 0 ] = np.zeros( shape[ 1 ] )
+    InitKernal[ 0, 0, 0, 0 ] = 1
     
     for filterIndex in range( 1, shape[ 3 ] ):
         InitKernal[ 0, :, 0, filterIndex ] = genSineFilter( 150 *( filterIndex ), points = shape[ 1 ] )
     InitKernal = InitKernal / shape[ 1 ]
-    
-    InitKernal[ 0, :, 0, 0 ] = np.zeros( shape[ 1 ] )
-    InitKernal[ 0, 0, 0, 0 ] = 1
     
     return InitKernal
 

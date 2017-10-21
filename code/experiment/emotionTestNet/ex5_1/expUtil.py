@@ -158,7 +158,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
     
     # initialize 
     result = np.zeros( [ 2, iteration_num ] )
-    diffResult = np.zeros( [ 4, iteration_num ] )
+    diffResult = np.zeros( [ 8, iteration_num ] )
     class_num = testLabel.shape[ 1 ]
     train_datasize = trainFeature.shape[ 0 ]
     
@@ -220,7 +220,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             outputDense1 = [ None ] *( batch_size *testBatchNum )
             
             # get intermediate tensor 
-            if visualSign >= 2:
+            if visualSign == 1:
                 flattenOut = sess.graph.get_tensor_by_name( 'flatten/flattenOut:0' )   
                 dense1Out = sess.graph.get_tensor_by_name( 'dense1/dense1Out:0' )        
                 
@@ -232,7 +232,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
                 inputTestFeature = testFeature[ start: end, : ]
                 inputTestLabel = testLabel[ start: end, : ]     
                 # run test
-                if visualSign >= 2:
+                if visualSign == 1:
                     tempTestResult, tempAccuracyTest, tempoutputBeforeDense, tempoutputDense1 = sess.run( [ prediction, accuracy, flattenOut, dense1Out ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
                 else:
                     tempTestResult, tempAccuracyTest = sess.run( [ prediction, accuracy ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
@@ -240,12 +240,12 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
                 testSubsetLabel[ start :end ] = np.argmax( inputTestLabel, 1 )
                 testSubsetResult[ start :end ] = np.argmax( tempTestResult, 1 ) 
                 
-                if visualSign >= 2:
+                if visualSign == 1:
                     outputBeforeDense[ start :end ] = tempoutputBeforeDense
                     outputDense1[ start :end ] = tempoutputDense1
                 
             # plot the t-SNE before the dense layer
-            if visualSign >= 2:
+            if visualSign == 1:
                 plotTSNE( outputBeforeDense, testSubsetLabel, newFolderName + '/figure/TSNE/tSNE_1_' + str( iteration ) + '.png' )
                 plotTSNE( outputDense1, testSubsetLabel, newFolderName + '/figure/TSNE/tSNE_2_' + str( iteration ) + '.png' )
             
@@ -298,7 +298,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
             plt.close('all')
             
             if visualSign == 1:
-                for diffLayerIndex in range( 0, 4 ):
+                for diffLayerIndex in range( 0, 8 ):
                     plt.plot(  list( range( iteration_num ) ), diffResult[ diffLayerIndex, : ], label = 'conv_' + str( diffLayerIndex ) )
                 plt.legend( 'upper right' )
                 plt.savefig( newFolderName + '/diff.png' )
@@ -309,7 +309,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
 #%%
 def printVariable( sess, lastState = -1, iteration = 1, newFolderName = -1 ):     
       #layerList = [ 'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8', 'dense1', 'dense2' ]
-      layerList = [  'conv1', 'conv2', 'conv3', 'conv4' ]
+      layerList = [  'conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8' ]
       diffList = layerList.copy(  )
       currentState = [ 0 ] *len( layerList )
       

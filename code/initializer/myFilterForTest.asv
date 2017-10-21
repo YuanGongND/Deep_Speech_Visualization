@@ -1,0 +1,46 @@
+function [ ] = myFilterForTest(  )
+%%
+for range = 0.1: 0.5
+
+type = 'low';
+N = 64;
+filter = fir1( N -1, 0.5, type );
+
+subplot( 2, 3, 1 )
+plot( filter )
+
+subplot( 2, 3, 2 )
+plot( abs( fft( filter ) ) );
+
+end
+
+%%
+% f1=250;f2=750;%待滤波正弦信号频率
+% fs=2000;%采样频率
+% t=0:(1/fs):0.1;
+% signal=sin(2*pi*f1*t)+sin(2*pi*f2*t);%滤波前信号
+% 
+% subplot( 2,3,3 )
+% plot( t,signal);%滤波前的信号图像
+
+
+
+convFilterSignal( signal, filter );
+
+end
+
+%%
+function [ convOut ] = convFilterSignal( signal, filter )
+
+convOut = [ ];
+for len = 1: ( size( signal, 2 ) -  size( filter, 2 ) )
+    convOut( len ) = sum( filter .* signal( len: len + size( filter, 2 ) - 1 ) );
+end
+Nout = size( convOut, 2 );
+subplot( 2,3,4 )
+plot(  1: size( convOut, 2 ), convOut );
+% subplot( 3, 2, 6 )
+% fr=(-Nout/2:Nout/2  -1 )*Fs/Nout;
+% plot( fr, ifft( abs( fft( convOut ) ) ) );
+
+end

@@ -23,7 +23,6 @@ import sys
 sys.path.append("../../model/")
 import soundNet
 import waveCNN
-import testNet
 sys.path.append("../")
 import expUtil
 import numpy as np
@@ -40,27 +39,24 @@ os.mkdir( newFolderName )
 shutil.copy( os.path.basename(__file__), newFolderName ) # copy this file to the new folder
 shutil.copy( '../../model/soundNet.py', newFolderName )
 shutil.copy( '../../model/waveCNN.py', newFolderName )
-shutil.copy( '../../model/testNet.py', newFolderName )
 shutil.copy( '../expUtil.py', newFolderName )
 
 # put all configuratation here
-thisTask = 'emotion'
-dataType = 'waveform'
+thisTask = 'gender'
 #model = soundNet.soundNet  # define the model
-model = testNet.testNet
-#model = waveCNN.waveCNNBN
+model = waveCNN.waveCNNBN
 
 # according to the configuaration, change the coresponding setting 
 #if thisTask == 'emotion':
 #    trainNewFolderName = newFolderName 
 
 # load data
-trainFeature, trainLabel, testFeature, testLabel = expUtil.loadData( testFolder = 4, testTask = thisTask, precision = 'original', sampleRate = 16000, dataType = dataType )
+trainFeature, trainLabel, testFeature, testLabel = expUtil.loadData( testFolder = 4, testTask = thisTask, precision = 'original', sampleRate = 16000 )
 
 # train the model
 resultOnTrain, resultOnTest = expUtil.train( testFeature, testLabel, trainFeature, trainLabel, iteration_num = 100, \
                                             lr_decay = 0.1, batch_size = 32, learningRate = 0.0001, iterationNum = 100, \
-                                            modelT = model, newFolderName = newFolderName, dataType = dataType, visualSign = 1  )
+                                            modelT = model, newFolderName = newFolderName  )
 
 
 #%% start test  

@@ -44,7 +44,7 @@ shutil.copy( '../../model/testNet.py', newFolderName )
 shutil.copy( '../expUtil.py', newFolderName )
 
 # put all configuratation here
-thisTask = 'emotion'
+thisTask = 'gender'
 dataType = 'waveform'
 #model = soundNet.soundNet  # define the model
 model = testNet.testNet
@@ -60,7 +60,7 @@ trainFeature, trainLabel, testFeature, testLabel = expUtil.loadData( testFolder 
 # train the model
 resultOnTrain, resultOnTest = expUtil.train( testFeature, testLabel, trainFeature, trainLabel, iteration_num = 100, \
                                             lr_decay = 0.1, batch_size = 32, learningRate = 0.0001, iterationNum = 100, \
-                                            modelT = model, newFolderName = newFolderName, dataType = dataType, visualSign = 1  )
+                                            modelT = model, newFolderName = newFolderName, dataType = dataType  )
 
 
 #%% start test  

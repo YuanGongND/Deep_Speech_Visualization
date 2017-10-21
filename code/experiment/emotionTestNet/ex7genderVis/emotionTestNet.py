@@ -44,8 +44,8 @@ shutil.copy( '../../model/testNet.py', newFolderName )
 shutil.copy( '../expUtil.py', newFolderName )
 
 # put all configuratation here
-thisTask = 'emotion'
-dataType = 'waveform'
+thisTask = 'gender'
+dataType = 'toyWaveform'
 #model = soundNet.soundNet  # define the model
 model = testNet.testNet
 #model = waveCNN.waveCNNBN

@@ -12,35 +12,10 @@ import numpy as np
 import keras 
 from keras.models import Model
 from keras import regularizers
-import math
-import matplotlib.pyplot as plt
-#%%
-def genSineFilter( frequency, points = 64, sampleRate = 16000 ):
-    Ts = 1 /sampleRate
-    t = list( np.linspace( -points/2*Ts, points/2*Ts, num= points ) )
-    #t = list( xrange( -points/2*Ts, points/2*Ts-Ts, Ts ) )
-    sinFilter = [ math.sin( 2 * math.pi * frequency *elem) for elem in t ]
-    plt.plot( sinFilter )
-    return sinFilter
-
-#%%
-def sineInit( shape, dtype=None ):
-    print( shape )
-    InitKernal = np.zeros( shape )
-    # the rest filter
-    
-    for filterIndex in range( 1, shape[ 3 ] ):
-        InitKernal[ 0, :, 0, filterIndex ] = genSineFilter( 150 *( filterIndex ), points = shape[ 1 ] )
-    InitKernal = InitKernal / shape[ 1 ]
-    
-    InitKernal[ 0, :, 0, 0 ] = np.zeros( shape[ 1 ] )
-    InitKernal[ 0, 0, 0, 0 ] = 1
-    
-    return InitKernal
 
 #%%
 def testNet( input, timeStep_num = 150, convLayer_num_front = 5, filter_num = 32, numClass = 4, init = 'glorot_uniform',\
-            activationUnit = 'relu', conv_filter_size_front = 40, pooling_size = 2, convLayer_num_back = 3, conv_filter_size_back = 40, l2_reg = 0.01,\
+            activationUnit = 'relu', conv_filter_size_front = 40, pooling_size = 2, convLayer_num_back = 6, conv_filter_size_back = 40, l2_reg = 0.01,\
             denseUnitNum = 64 ):
     # the input shape is [ example_num, whole_audio_length ], e.g., [ 200 samples, 96000 points ]
     
@@ -65,17 +40,13 @@ def testNet( input, timeStep_num = 150, convLayer_num_front = 5, filter_num = 32
     # convLayer_num *( conv + maxpooling )
     for i in range( convLayer_num_front ):
         input = tf.layers.batch_normalization( input )
-        with tf.name_scope( 'conv' + str( i + 1 ) ):
-            if i == 0:
-                input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_front ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = sineInit )( input )
-            else:
-                input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_front ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init )( input )
+        input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_front ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init )( input )
         print( input.shape )
         print( input.shape )
         print( i )
     
     input = tf.abs( input )
-    input = keras.layers.pooling.AveragePooling2D( ( 1, pooling_size **(convLayer_num_front + 2 ) ), padding='valid' )( input )
+    input = keras.layers.pooling.AveragePooling2D( ( 1, pooling_size **(convLayer_num_front + 1 ) ), padding='same' )( input )
     #input = tf.scalar_mul( pooling_size **(convLayer_num_front - 2), input )
     
     # reshape for preparision of LSTM layers 
@@ -86,18 +57,18 @@ def testNet( input, timeStep_num = 150, convLayer_num_front = 5, filter_num = 32
     print( input.shape )
     input = tf.reshape( input, [ filter_num, 1, example_num, timeStep_num*restPoint ] )
     print( input.shape )
-    input = tf.transpose( input, [ 2, 3, 0, 1 ] )
+    input = tf.transpose( input, [ 2,1,3,0 ] )
     print( input.shape )
     
     for i in range( convLayer_num_back ):
         input = tf.layers.batch_normalization( input )
-        input = keras.layers.convolutional.Conv2D( 16, ( 20, 2 ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init )( input )
+        input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_back ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init )( input )
         print( input.shape )
-        input = keras.layers.pooling.MaxPooling2D( ( 2, 2 ), padding='same' )( input )
+        input = keras.layers.pooling.MaxPooling2D( ( 1, pooling_size ), padding='same' )( input )
         print( input.shape )
         print( i )
         
-    newSubSequence_length = input.get_shape().as_list()[ -3 ] *input.get_shape().as_list()[ -2 ] *input.get_shape().as_list()[ -1 ]
+    newSubSequence_length = np.multiply( *input.get_shape().as_list()[ -2: ] )
     input = tf.reshape( input, [ example_num, newSubSequence_length ] )
     print( input.shape )
     
