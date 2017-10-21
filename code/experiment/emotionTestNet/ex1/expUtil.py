@@ -232,10 +232,7 @@ def train( testFeature, testLabel, trainFeature, trainLabel, newFolderName, iter
                 inputTestFeature = testFeature[ start: end, : ]
                 inputTestLabel = testLabel[ start: end, : ]     
                 # run test
-                if visualSign == 1:
-                    tempTestResult, tempAccuracyTest, tempoutputBeforeDense, tempoutputDense1 = sess.run( [ prediction, accuracy, flattenOut, dense1Out ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
-                else:
-                    tempTestResult, tempAccuracyTest = sess.run( [ prediction, accuracy ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
+                tempTestResult, tempAccuracyTest, tempoutputBeforeDense, tempoutputDense1 = sess.run( [ prediction, accuracy, flattenOut, dense1Out ], feed_dict = { input_x: inputTestFeature, input_y: inputTestLabel } ) 
                 # record result
                 testSubsetLabel[ start :end ] = np.argmax( inputTestLabel, 1 )
                 testSubsetResult[ start :end ] = np.argmax( tempTestResult, 1 ) 
@@ -387,13 +384,13 @@ def loadData( testTask, testFolder = 4, precision = 'original', sampleRate = 160
     del trainFolderList[ testFolder ]
     
     if dataType == 'toyWaveform':
-        dataFileFolder = '../../../processedData/backup/toyWaveform/' + str( sampleRate ) + '_' + precision + '/session_'
+        dataFileFolder = '../../../processedData/toyWaveform/' + str( sampleRate ) + '_' + precision + '/session_'
     elif dataType == 'waveform':
-        dataFileFolder = '../../../processedData/backup/waveform/' + str( sampleRate ) + '_' + precision + '/session_'
+        dataFileFolder = '../../../processedData/waveform/' + str( sampleRate ) + '_' + precision + '/session_'
     elif dataType == 'toySpectrogram':
-        dataFileFolder = '../../../processedData/backup/toySpectrogram/' + str( sampleRate ) + '_' + precision + '/session_'
+        dataFileFolder = '../../../processedData/toySpectrogram/' + str( sampleRate ) + '_' + precision + '/session_'
     elif dataType == 'spectrogram':
-        dataFileFolder = '../../../processedData/backup/spectrogram/' + str( sampleRate ) + '_' + precision + '/session_'
+        dataFileFolder = '../../../processedData/spectrogram/' + str( sampleRate ) + '_' + precision + '/session_'
     
     fold = [ 0, 0, 0, 0, 0 ]
     for i in folderList:

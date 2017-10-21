@@ -140,5 +140,5 @@ def waveCNNBN( input, timeStep_num = 150, convLayer_num_front = 8, filter_num = 
 #%%    
 if __name__ == '__main__':
     time_seq = list( range( 1, 16 ) ) 
-    testInput =  np.zeros( [ 64, 96000 ] )
-    waveCNNBN( input = testInput )
+    testInput =  np.zeros( [ 15, 96000 ] )
+    waveCNN( input = testInput )

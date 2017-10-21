@@ -14,7 +14,7 @@ from keras.models import Model
 from keras import regularizers
 
 #%%
-def waveCNN( input, timeStep_num = 150, convLayer_num_front = 8, filter_num = 32, numClass = 2, \
+def testNet( input, timeStep_num = 150, convLayer_num_front = 8, filter_num = 32, numClass = 2, \
             activationUnit = 'relu', conv_filter_size_front = 40, pooling_size = 2, convLayer_num_back = 6, conv_filter_size_back = 40 ):
     # the input shape is [ example_num, whole_audio_length ], e.g., [ 200 samples, 96000 points ]
     
@@ -40,9 +40,10 @@ def waveCNN( input, timeStep_num = 150, convLayer_num_front = 8, filter_num = 32
     for i in range( convLayer_num_front ):
         input = keras.layers.convolutional.Conv2D( filter_num, ( 1, conv_filter_size_front ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( 0.01) )( input )
         print( input.shape )
-        input = keras.layers.pooling.MaxPooling2D( ( 1, pooling_size ), padding='same' )( input )
         print( input.shape )
         print( i )
+    
+    input = keras.layers.pooling.MaxPooling2D( ( 1, pooling_size **convLayer_num_front ), padding='same' )( input )
     
     # reshape for preparision of LSTM layers 
     print( input.shape )
@@ -140,5 +141,5 @@ def waveCNNBN( input, timeStep_num = 150, convLayer_num_front = 8, filter_num = 
 #%%    
 if __name__ == '__main__':
     time_seq = list( range( 1, 16 ) ) 
-    testInput =  np.zeros( [ 64, 96000 ] )
-    waveCNNBN( input = testInput )
+    testInput =  np.zeros( [ 32, 96000 ] )
+    testNet( input = testInput )
