@@ -5,8 +5,8 @@ precision = 'int8';
 sampleRate = 16000; 
 CUTLENGTH = 6; % 6 seconds
 WAVSIZE = sampleRate *CUTLENGTH; % sample rate *record length
-specHeigth = 256;
-specWidth = 256;
+specHeigth = 64;
+specWidth = 150;
 
 % fix the random seed to prove reproducibility
 rng(3);
@@ -62,7 +62,7 @@ for sessionIndex = 1:5
     end
    
    % write the waveform file for each session ( original )
-   precision = 'original';
+   precision = 'original_64';
    if exist( [ '../../processedData/waveform/', num2str(sampleRate) ,'_', precision ] ) == 0
        mkdir( [ '../../processedData/waveform/', num2str(sampleRate), '_', precision ] );
    end
@@ -77,10 +77,10 @@ for sessionIndex = 1:5
    end
    
    % toy (only have 100 samples, fast test)
-   csvwrite( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:100, : ) );
+   %csvwrite( [ '../../processedData/toyWaveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:100, : ) );
    csvwrite( [ '../../processedData/toySpectrogram/', num2str(sampleRate), '_', precision, '/session_', num2str( sessionIndex ), '.csv' ],specSet( 1:100, : ) );
    % full ( both in range [ 0, 1 ] )
-   csvwrite( [ '../../processedData/waveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:dataIndex-1, : ) );
+   %csvwrite( [ '../../processedData/waveform/', num2str(sampleRate), '_', precision,  '/session_', num2str( sessionIndex ), '.csv' ],waveformSet( 1:dataIndex-1, : ) );
    csvwrite( [ '../../processedData/spectrogram/', num2str(sampleRate), '_', precision, '/session_', num2str( sessionIndex ), '.csv' ],specSet( 1:dataIndex-1, : ) );
    
    % write the waveform file for each session ( int8 )

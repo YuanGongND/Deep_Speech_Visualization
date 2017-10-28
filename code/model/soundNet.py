@@ -43,7 +43,7 @@ def soundNet( input, numClass = 2, activationUnit = 'relu', l2_reg = 0.01, init 
     with tf.name_scope( 'conv1' ):
 #        input = tf.layers.conv2d( inputs = input, filters = 16, kernel_size = ( 1, 64 ), strides=( 1, 2 ), padding='same' )
 #        print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
-        input = keras.layers.convolutional.Conv2D( filters = 16, kernel_size = ( 1, 64 ), strides= ( 1, 2 ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = sineInit, bias_initializer = biasInit  )( input )
+        input = keras.layers.convolutional.Conv2D( filters = 16, kernel_size = ( 1, 64 ), strides= ( 1, 2 ), padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init, bias_initializer = biasInit  )( input )
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
         conv1Out = tf.identity( input, name = 'conv1Out' ) 
         #input = tf.nn.dropout( input, keep_prob = dropoutRate )
@@ -109,7 +109,7 @@ def soundNet( input, numClass = 2, activationUnit = 'relu', l2_reg = 0.01, init 
         
     # conv8
     with tf.name_scope( 'conv8' ):
-        input = keras.layers.convolutional.Conv2D( filters = 1024, kernel_size = ( 1, 8 ), strides=2, padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init  )( input )
+        input = keras.layers.convolutional.Conv2D( filters = 1401, kernel_size = ( 1, 8 ), strides=2, padding='same', activation= activationUnit, kernel_regularizer=regularizers.l2( l2_reg ), kernel_initializer = init  )( input )
         input = tf.layers.batch_normalization( input )
         print( tf.get_default_graph().get_name_scope() + str( input.shape ) )
         conv8Out = tf.identity( input, name = 'conv8Out' ) 

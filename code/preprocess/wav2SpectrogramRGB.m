@@ -3,18 +3,18 @@ function [ spectroEnergyFlat ] = wav2SpectrogramRGB( recording, Fs, width, heigh
 logSign = 0;
 
 if nargin <= 2
-    width = 256;
-    height = 256;
+    width = 150;
+    height = 64;
 end
 
 spectro = spectrogram( recording, floor( size( recording, 2 )/( width /2 + 1) ) , floor( size( recording, 2 )/ ( width + 1 ) ) - 1, 2*height , Fs, 'yaxis');
-spectrogram( recording, floor( size( recording, 2 )/( width /2 + 1) ) , floor( size( recording, 2 )/ ( width + 1 ) ) - 1, 2*height , Fs, 'yaxis');
+%spectrogram( recording, floor( size( recording, 2 )/( width /2 + 1) ) , floor( size( recording, 2 )/ ( width + 1 ) ) - 1, 2*height , Fs, 'yaxis');
 
 
 if logSign == 1
-   spectroEnergy =  log( real( spectro ).^2 + 0.0001 );
+   spectroEnergy =  log( abs( spectro ).^2 + 0.0001 );
 else
-   spectroEnergy =  real( spectro ).^2 ;
+   spectroEnergy =  abs( spectro ).^2 ;
 end
 
 % rotate the spectrogram to correct position

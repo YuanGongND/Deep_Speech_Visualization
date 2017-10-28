@@ -1,0 +1,122 @@
+function [ ] = figure1(  )
+
+font_size = 15;
+time = [ 0: 6/96000: 6 ];
+time = time( 1: 96000 );
+Fs = 16000;
+
+%% real signal 
+[ signal, Fs ] = audioread( 'audio/00003.wav' );
+
+hold off;
+plot( time, signal );
+set(gcf, 'Position', [0, 0, 800, 250]);
+xlabel('Time (s)','FontSize',font_size);
+ylabel('Amplitude','FontSize',font_size);
+ylim( [ -0.5 0.5 ] )
+set(gca,'FontSize',font_size);
+saveas( gcf, 'originalSignal.png' );
+
+hold off;
+showSpec( signal', Fs );
+set(gca,'FontSize',font_size);
+xlabel('Time (s)','FontSize',font_size);
+saveas( gcf, 'originalSignalSpec.png' );
+
+%%
+font_size = 10;
+N = 256; % the length of each filter
+
+for range = 0.5
+
+type = 'low'
+filter = fir1( N -1, range, type );
+
+hold off;
+plot( filter )
+set(gcf, 'Position', [0, 0, 250, 250]);
+xlim( [ 1, N ] );
+xlabel('Point Index','FontSize',font_size);
+ylabel('Amplitude','FontSize',font_size);
+set(gca,'FontSize',font_size);
+saveas( gcf, 'filter1.png' );
+
+hold off;
+fqz = [ -Fs/2: Fs/N: Fs/2 ];
+fqz = fqz( 1: N );
+plot( fqz, fftshift( abs( fft( filter ) ) ) );
+set(gcf, 'Position', [0, 0, 250, 250]);
+xlabel('Frequency','FontSize',font_size);
+ylabel('Amplitude','FontSize',font_size);
+set(gca,'FontSize',font_size);
+saveas( gcf, 'filter1Spec.png' );
+end
+filter1 = filter;
+
+for range = 0.5
+
+type = 'high'
+filter = fir1( N -1, range, type );
+
+hold off;
+plot( filter )
+set(gcf, 'Position', [0, 0, 250, 250]);
+xlim( [ 1, N ] );
+xlabel('Point Index','FontSize',font_size);
+ylabel('Amplitude','FontSize',font_size);
+set(gca,'FontSize',font_size);
+saveas( gcf, 'filter2.png' );
+
+hold off;
+fqz = [ -Fs/2: Fs/N: Fs/2 ];
+plot( fqz, fftshift( abs( fft( filter ) ) ) );
+set(gcf, 'Position', [0, 0, 250, 250]);
+xlabel('Frequency','FontSize',font_size);
+ylabel('Amplitude','FontSize',font_size);
+set(gca,'FontSize',font_size);
+saveas( gcf, 'filter2Spec.png' );
+end
+filter2 = filter;
+
+convOut1 = convFilterSignal( signal', filter1 )
+convOut2 = convFilterSignal2( signal', filter2 )
+
+end
+
+%%
+function [ convOut ] = convFilterSignal( signal, filter, name )
+
+convOut = [ ];
+for len = 1: ( size( signal, 2 ) -  size( filter, 2 ) )
+    convOut( len ) = sum( filter .* signal( len: len + size( filter, 2 ) - 1 ) );
+end
+Nout = size( convOut, 2 );
+
+time = [ 0: 6/96000: 6 ];
+time = time( 1: 96000 );
+
+font_size = 15;
+hold off;
+signal = [ zeros( 1, 96000 -Nout ), convOut ];
+plot( time, signal );
+set(gcf, 'Position', [0, 0, 800, 250]);
+xlabel('Time (s)','FontSize',font_size);
+ylabel('Amplitude','FontSize',font_size);
+ylim( [ -0.5 0.5 ] )
+set(gca,'FontSize',font_size);
+saveas( gcf, [] );
+
+hold off;
+showSpec( convOut, 16000 );
+set(gca,'FontSize',font_size);
+xlabel('Time (s)','FontSize',font_size);
+saveas( gcf, 'convOut1Spec.png' );
+
+end
+
+%%
+function [ ] = showSpec( recording, Fs )
+    width = 256;
+    height = 256;
+    spectrogram( recording, floor( size( recording, 2 )/( width /2 + 1) ) , floor( size( recording, 2 )/ ( width + 1 ) ) - 1, 2*height , Fs, 'yaxis');
+end
